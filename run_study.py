@@ -1,55 +1,69 @@
 import pickle
-from open3d import visualization as o3dv
 import random
 import argparse
 import numpy as np
+import bz2
+from util import *
+import json
 
 
-def vis_judge(in_ho, out_ho, show_label=False):
+def run_intro(args):
+    text_list = ['Thank you for participating in the study.',
+                 'You will be shown two hand/object pairs',
+                 'and asked to choose which one looks more natural.',
+                 'Please press the indicated key to choose.',
+                 ' ',
+                 'The view perspective can be shifted by:',
+                 'Clicking and dragging to rotate',
+                 'Scrolling to zoom, and Ctrl+clicking to pan',
+                 'You can practice here.',
+                 ' ',
+                 'Press Q to proceed']
+
+    geom_list = []
+    for idx, t in enumerate(text_list):
+        geom_list.append(text_3d(t, pos=[0, -0.04 * idx, 0], font_size=40, density=2))
+
+    o3dv.draw_geometries(geom_list, zoom=1.2, front=[0, 0, 1], lookat=[0.6, -0.2, 0], up=[0, 1, 0])
+
+
+def run_sample(sample, args):
+    hand_in, obj_in = get_meshes(sample['hand_verts_in'], sample['hand_faces'], sample['obj_verts'], sample['obj_faces'])
+    hand_out, obj_out = get_meshes(sample['hand_verts_out'], sample['hand_faces'], sample['obj_verts'], sample['obj_faces'])
+
     y_in, y_out = 0, 0.2
     if np.random.rand() > 0.5:
         y_in, y_out = 0.2, 0
 
-    hand_in, obj_in = in_ho.get_o3d_meshes(hand_contact=False)
-    hand_out, obj_out = out_ho.get_o3d_meshes(hand_contact=False)
     hand_in.translate((0.0, y_in, 0.0))
     obj_in.translate((0.0, y_in, 0.0))
     hand_out.translate((0.0, y_out, 0.0))
     obj_out.translate((0.0, y_out, 0.0))
 
-    lbl_a = util.text_3d('A', pos=[-0.2, 0.0, 0], font_size=40, density=2)
-    lbl_b = util.text_3d('B', pos=[-0.2, 0.2, 0], font_size=40, density=2)
-    lbl_instr = util.text_3d('Press A or B', pos=[-0.2, 0.4, 0], font_size=40, density=2)
+    lbl_a = text_3d('A', pos=[-0.2, 0.0, 0], font_size=40, density=2)
+    lbl_b = text_3d('B', pos=[-0.2, 0.2, 0], font_size=40, density=2)
+    lbl_instr_1 = text_3d('Which looks more natural?', pos=[-0.2, 0.40, 0], font_size=40, density=2)
+    lbl_instr_2 = text_3d('Press A or B', pos=[-0.2, 0.35, 0], font_size=40, density=2)
 
-    if show_label:
+    if args.show_label:
         hand_in.paint_uniform_color(np.asarray([150.0, 250.0, 150.0]) / 255)  # Green
         hand_out.paint_uniform_color(np.asarray([250.0, 150.0, 150.0]) / 255)  # Red
-    obj_in.paint_uniform_color(np.asarray([100.0, 100.0, 100.0]) / 255)   # Gray
-    obj_out.paint_uniform_color(np.asarray([100.0, 100.0, 100.0]) / 255)  # Gray
 
-    geom_list = [hand_in, obj_in, hand_out, obj_out, lbl_a, lbl_b, lbl_instr]
+    geom_list = [hand_in, obj_in, hand_out, obj_out, lbl_a, lbl_b, lbl_instr_1, lbl_instr_2]
 
     user_result = -1    # -1 invalid, 0 liked GT, 1 liked opt
 
     def press_a(vis):
         nonlocal user_result
         # print('GOT A')
-        if y_in == 0:
-            user_result = 0
-        else:
-            user_result = 1
+        user_result = int(y_in != 0)
         vis.close()
-        return False
 
     def press_b(vis):
         nonlocal user_result
         # print('GOT B')
-        if y_in > 0:
-            user_result = 0
-        else:
-            user_result = 1
+        user_result = int(y_in == 0)
         vis.close()
-        return False
 
     key_to_callback = dict()
     key_to_callback[ord("A")] = press_a
@@ -59,29 +73,37 @@ def vis_judge(in_ho, out_ho, show_label=False):
     return user_result
 
 
-def run_eval(args):
-    in_file = 'dataset/fitted_{}.pkl'.format(args.split)
-    runs = pickle.load(open(in_file, 'rb'))
-    print('Loaded {} len {}'.format(in_file, len(runs)))
+def run_study(args):
+    in_file = 'study.pkl'
+    runs = pickle.load(bz2.BZ2File(in_file, 'rb'))
+    print('Loaded database file: {}'.format(in_file, len(runs)))
 
-    print('Shuffling!!!')
-    random.shuffle(runs)
+    run_intro(args)
 
-    all_data = []   # Do non-parallel
-    for idx, sample in enumerate(runs):
-        gt_ho, in_ho, out_ho = sample['gt_ho'], sample['in_ho'], sample['out_ho']
-        user_result = vis_judge(in_ho, out_ho, args.show_label)
-        print('User result', user_result)
-        all_data.append(user_result)
+    results = list()
+    splits = runs.keys()
+    for idx, split in enumerate(splits):
+        split_samples = runs[split]
+        random.shuffle(split_samples)
 
-        u, u_counts = np.unique(np.array(all_data), return_counts=True)
-        print(u, u_counts)
+        for sample in split_samples:
+            out = dict()
+            out['hash'] = sample['hash']
+            out['split'] = split
+            out['obj_name'] = sample['obj_name']
+            out['result'] = run_sample(sample, args)
+            results.append(out)
+
+            with open('result.json', 'w') as fp:
+                json.dump(results, fp, indent=4)
+
+
+
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Run eval on fitted pkl')
+    parser = argparse.ArgumentParser(description='Run study')
     parser.add_argument('--show_label', action='store_true')
-    parser.add_argument('--split', default='fine', type=str)
     args = parser.parse_args()
 
-    run_eval(args)
+    run_study(args)
