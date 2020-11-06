@@ -5,6 +5,57 @@ import numpy as np
 import bz2
 from util import *
 import json
+from open3d import io as o3dio
+from open3d import geometry as o3dg
+from open3d import utility as o3du
+from open3d import visualization as o3dv
+
+
+def run_samples(fine_samples, args):
+    for idx in range(3):
+        sample = fine_samples[idx]
+        hand_in, obj_in = get_meshes(sample['hand_verts_in'], sample['hand_faces'], sample['obj_verts'], sample['obj_faces'])
+        hand_out, obj_out = get_meshes(sample['hand_verts_out'], sample['hand_faces'], sample['obj_verts'], sample['obj_faces'])
+        hand_out.translate((0.0, 0.2, 0.0))
+        obj_out.translate((0.0, 0.2, 0.0))
+
+        if idx == 0:
+            hand_in.translate((0.05, 0, 0.01))
+            lbl_a = text_3d('A', pos=[-0.2, 0.0, 0], font_size=40, density=2)
+            lbl_b = text_3d('B', pos=[-0.2, 0.2, 0], font_size=40, density=2)
+        elif idx == 1:
+            hand_out.translate((0, 0.01, -0.05))
+            lbl_a = text_3d('A', pos=[-0.2, 0.2, 0], font_size=40, density=2)
+            lbl_b = text_3d('B', pos=[-0.2, 0.0, 0], font_size=40, density=2)
+        elif idx == 2:
+            hand_out.translate((0, 0.02, 0))
+            lbl_a = text_3d('A', pos=[-0.2, 0.0, 0], font_size=40, density=2)
+            lbl_b = text_3d('B', pos=[-0.2, 0.2, 0], font_size=40, density=2)
+
+        lbl_instr_1 = text_3d('Practice example {}. Select the more'.format(idx + 1), pos=[-0.25, 0.33, 0], font_size=25, density=2)
+        lbl_instr_2 = text_3d('natural looking grasp. Press A or B', pos=[-0.25, 0.30, 0], font_size=25, density=2)
+
+        geom_list = [hand_in, obj_in, hand_out, obj_out, lbl_a, lbl_b, lbl_instr_1, lbl_instr_2]
+
+        def press_a(vis):
+            vis.close()
+
+        def press_b(vis):
+            vis.close()
+
+        key_to_callback = {ord("A"): press_a, ord("B"): press_b}
+        o3dv.draw_geometries_with_key_callbacks(geom_list, key_to_callback)
+
+
+    text_list = ['End of practice samples.',
+                 ' ',
+                 'Press Q to proceed to the study.']
+
+    geom_list = []
+    for idx, t in enumerate(text_list):
+        geom_list.append(text_3d(t, pos=[0, -0.04 * idx, 0], font_size=40, density=2))
+
+    o3dv.draw_geometries(geom_list, zoom=0.45, front=[0, 0, 1], lookat=[0.3, -0.05, 0], up=[0, 1, 0])
 
 
 def run_intro(args):
@@ -18,32 +69,31 @@ def run_intro(args):
                  'Scrolling to zoom, and Ctrl+clicking to pan',
                  'You can practice here.',
                  ' ',
-                 'Press Q to proceed']
+                 'Press Q to proceed to practice examples']
 
     geom_list = []
     for idx, t in enumerate(text_list):
         geom_list.append(text_3d(t, pos=[0, -0.04 * idx, 0], font_size=40, density=2))
 
-    o3dv.draw_geometries(geom_list, zoom=1.2, front=[0, 0, 1], lookat=[0.6, -0.2, 0], up=[0, 1, 0])
+    o3dv.draw_geometries(geom_list, zoom=0.45, front=[0, 0, 1], lookat=[0.6, -0.2, 0], up=[0, 1, 0])
 
 
 def run_sample(sample, args):
     hand_in, obj_in = get_meshes(sample['hand_verts_in'], sample['hand_faces'], sample['obj_verts'], sample['obj_faces'])
     hand_out, obj_out = get_meshes(sample['hand_verts_out'], sample['hand_faces'], sample['obj_verts'], sample['obj_faces'])
 
-    y_in, y_out = 0, 0.2
-    if np.random.rand() > 0.5:
-        y_in, y_out = 0.2, 0
+    out_is_top = np.random.rand() > 0.5
+    a_is_top = np.random.rand() > 0.5
 
-    hand_in.translate((0.0, y_in, 0.0))
-    obj_in.translate((0.0, y_in, 0.0))
-    hand_out.translate((0.0, y_out, 0.0))
-    obj_out.translate((0.0, y_out, 0.0))
+    hand_in.translate((0.0, int(not out_is_top) * 0.2, 0.0))
+    obj_in.translate((0.0, int(not out_is_top) * 0.2, 0.0))
+    hand_out.translate((0.0, int(out_is_top) * 0.2, 0.0))
+    obj_out.translate((0.0, int(out_is_top) * 0.2, 0.0))
 
-    lbl_a = text_3d('A', pos=[-0.2, 0.0, 0], font_size=40, density=2)
-    lbl_b = text_3d('B', pos=[-0.2, 0.2, 0], font_size=40, density=2)
-    lbl_instr_1 = text_3d('Which looks more natural?', pos=[-0.2, 0.40, 0], font_size=40, density=2)
-    lbl_instr_2 = text_3d('Press A or B', pos=[-0.2, 0.35, 0], font_size=40, density=2)
+    lbl_a = text_3d('A', pos=[-0.2, int(a_is_top) * 0.2, 0], font_size=40, density=2)
+    lbl_b = text_3d('B', pos=[-0.2, int(not a_is_top) * 0.2, 0], font_size=40, density=2)
+    lbl_instr_1 = text_3d('Select the more natural looking grasp.', pos=[-0.25, 0.33, 0], font_size=25, density=2)
+    lbl_instr_2 = text_3d('Press A or B', pos=[-0.25, 0.30, 0], font_size=25, density=2)
 
     if args.show_label:
         hand_in.paint_uniform_color(np.asarray([150.0, 250.0, 150.0]) / 255)  # Green
@@ -55,19 +105,15 @@ def run_sample(sample, args):
 
     def press_a(vis):
         nonlocal user_result
-        # print('GOT A')
-        user_result = int(y_in != 0)
+        user_result = int(out_is_top == a_is_top)
         vis.close()
 
     def press_b(vis):
         nonlocal user_result
-        # print('GOT B')
-        user_result = int(y_in == 0)
+        user_result = int(out_is_top != a_is_top)
         vis.close()
 
-    key_to_callback = dict()
-    key_to_callback[ord("A")] = press_a
-    key_to_callback[ord("B")] = press_b
+    key_to_callback = {ord("A"): press_a, ord("B"): press_b}
     o3dv.draw_geometries_with_key_callbacks(geom_list, key_to_callback)
 
     return user_result
@@ -79,12 +125,14 @@ def run_study(args):
     print('Loaded database file: {}'.format(in_file, len(runs)))
 
     run_intro(args)
+    run_samples(runs['fine'], args)
 
     results = list()
     splits = runs.keys()
     for idx, split in enumerate(splits):
         split_samples = runs[split]
         random.shuffle(split_samples)
+        print('Randomizing order')
 
         for sample in split_samples:
             out = dict()
@@ -96,9 +144,6 @@ def run_study(args):
 
             with open('result.json', 'w') as fp:
                 json.dump(results, fp, indent=4)
-
-
-
 
 
 if __name__ == '__main__':
