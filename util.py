@@ -46,6 +46,11 @@ def get_meshes(hand_verts, hand_faces, obj_verts, obj_faces):
     hand_mesh.compute_vertex_normals()
     hand_mesh.paint_uniform_color(hand_color)
 
+    # hand_mesh = hand_mesh.subdivide_loop(number_of_iterations=2)
+    # # hand_mesh = hand_mesh.filter_smooth_taubin(number_of_iterations=1)
+    # hand_mesh = hand_mesh.filter_smooth_laplacian()
+    # hand_mesh.compute_vertex_normals()
+
     obj_mesh = o3dg.TriangleMesh()
     obj_mesh.vertices = o3du.Vector3dVector(obj_verts)
     obj_mesh.triangles = o3du.Vector3iVector(obj_faces)
