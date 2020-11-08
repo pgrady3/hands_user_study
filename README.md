@@ -14,7 +14,7 @@ Python 3 is required to run the study. Install all python dependencies using
 ```
 pip install -r requirements.txt
 ```
-Next, [download the database of grasps here](https://www.dropbox.com/s/dppsjajme4ezdcq/study.zip?dl=0). Extract it so `study.pkl` is in the root of the `hands_user_study` folder.
+Next, [download the database of grasps here](https://www.dropbox.com/sh/saygfywfgi4458n/AADvnUWyS61IDnkvTyhuhadaa?dl=0). Extract it so `study.pkl` is in the root of the `hands_user_study` folder.
 
 
 ### Running

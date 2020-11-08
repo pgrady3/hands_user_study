@@ -8,7 +8,8 @@ import json
 import time
 
 
-READ_FILES = ['results_gerry.json']
+# READ_FILES = ['results_gerry.json']
+READ_FILES = ['results_im_ani.json']
 
 
 if __name__ == '__main__':
@@ -39,3 +40,4 @@ if __name__ == '__main__':
 
     z = (p - p0) / np.sqrt(p * p * (1/75 + 1/75))
     print(z)
+    print('length', len(all_stats['result']))

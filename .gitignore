@@ -1,6 +1,6 @@
 *.pkl
 .idea/
-result.json
+*.json
 *.zip
 
 

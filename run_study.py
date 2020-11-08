@@ -122,7 +122,7 @@ def run_sample(sample, args):
 
 def run_study(args):
     in_file = 'study.pkl'
-    out_file = 'results_{}.json'.format(int(time.time()))
+    out_file = 'results_{}_{}.json'.format(args.split, int(time.time()))
     runs = pickle.load(bz2.BZ2File(in_file, 'rb'))
     print('Loaded database file: {}'.format(in_file, len(runs)))
 
