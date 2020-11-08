@@ -9,6 +9,7 @@ from open3d import io as o3dio
 from open3d import geometry as o3dg
 from open3d import utility as o3du
 from open3d import visualization as o3dv
+import time
 
 
 def run_samples(fine_samples, args):
@@ -32,8 +33,8 @@ def run_samples(fine_samples, args):
             lbl_a = text_3d('A', pos=[-0.2, 0.0, 0], font_size=40, density=2)
             lbl_b = text_3d('B', pos=[-0.2, 0.2, 0], font_size=40, density=2)
 
-        lbl_instr_1 = text_3d('Practice example {}. Select the more'.format(idx + 1), pos=[-0.25, 0.33, 0], font_size=25, density=2)
-        lbl_instr_2 = text_3d('natural looking grasp. Press A or B', pos=[-0.25, 0.30, 0], font_size=25, density=2)
+        lbl_instr_1 = text_3d('Practice example {}. Which looks more like the way'.format(idx + 1), pos=[-0.25, 0.33, 0], font_size=25, density=2)
+        lbl_instr_2 = text_3d('a person would grasp the object? Press A or B', pos=[-0.25, 0.30, 0], font_size=25, density=2)
 
         geom_list = [hand_in, obj_in, hand_out, obj_out, lbl_a, lbl_b, lbl_instr_1, lbl_instr_2]
 
@@ -92,8 +93,8 @@ def run_sample(sample, args):
 
     lbl_a = text_3d('A', pos=[-0.2, int(a_is_top) * 0.2, 0], font_size=40, density=2)
     lbl_b = text_3d('B', pos=[-0.2, int(not a_is_top) * 0.2, 0], font_size=40, density=2)
-    lbl_instr_1 = text_3d('Select the more natural looking grasp.', pos=[-0.25, 0.33, 0], font_size=25, density=2)
-    lbl_instr_2 = text_3d('Press A or B', pos=[-0.25, 0.30, 0], font_size=25, density=2)
+    lbl_instr_1 = text_3d('Which looks more like the way a person', pos=[-0.25, 0.33, 0], font_size=25, density=2)
+    lbl_instr_2 = text_3d('would grasp the object? Press A or B', pos=[-0.25, 0.30, 0], font_size=25, density=2)
 
     if args.show_label:
         hand_in.paint_uniform_color(np.asarray([150.0, 250.0, 150.0]) / 255)  # Green
@@ -121,6 +122,7 @@ def run_sample(sample, args):
 
 def run_study(args):
     in_file = 'study.pkl'
+    out_file = 'results_{}.json'.format(int(time.time()))
     runs = pickle.load(bz2.BZ2File(in_file, 'rb'))
     print('Loaded database file: {}'.format(in_file, len(runs)))
 
@@ -128,27 +130,30 @@ def run_study(args):
     run_samples(runs['fine'], args)
 
     results = list()
-    splits = runs.keys()
-    for idx, split in enumerate(splits):
-        split_samples = runs[split]
-        random.shuffle(split_samples)
-        print('Randomizing order')
 
-        for sample in split_samples:
-            out = dict()
-            out['hash'] = sample['hash']
-            out['split'] = split
-            out['obj_name'] = sample['obj_name']
-            out['result'] = run_sample(sample, args)
-            results.append(out)
+    print('Running split', args.split)
+    split_samples = runs[args.split]
+    random.shuffle(split_samples)
+    print('Randomizing order')
 
-            with open('result.json', 'w') as fp:
-                json.dump(results, fp, indent=4)
+    for sample in split_samples:
+        out = dict()
+        out['hash'] = sample['hash']
+        out['split'] = args.split
+        out['obj_name'] = sample['obj_name']
+        start_time = time.time()
+        out['result'] = run_sample(sample, args)
+        out['elapsed'] = time.time() - start_time
+        results.append(out)
+
+        with open(out_file, 'w') as fp:
+            json.dump(results, fp, indent=4)
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Run study')
     parser.add_argument('--show_label', action='store_true')
+    parser.add_argument('--split', default='fine', type=str)
     args = parser.parse_args()
 
     run_study(args)
