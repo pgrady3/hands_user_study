@@ -79,6 +79,19 @@ def run_intro(args):
     o3dv.draw_geometries(geom_list, zoom=0.45, front=[0, 0, 1], lookat=[0.6, -0.2, 0], up=[0, 1, 0])
 
 
+def run_exit(args):
+    text_list = ['The study is completed.',
+                 'Thank you for participating!',
+                 ' ',
+                 'Press Q to exit.']
+
+    geom_list = []
+    for idx, t in enumerate(text_list):
+        geom_list.append(text_3d(t, pos=[0, -0.04 * idx, 0], font_size=40, density=2))
+
+    o3dv.draw_geometries(geom_list, zoom=0.45, front=[0, 0, 1], lookat=[0.3, -0.05, 0], up=[0, 1, 0])
+
+
 def run_sample(sample, args):
     hand_in, obj_in = get_meshes(sample['hand_verts_in'], sample['hand_faces'], sample['obj_verts'], sample['obj_faces'])
     hand_out, obj_out = get_meshes(sample['hand_verts_out'], sample['hand_faces'], sample['obj_verts'], sample['obj_faces'])
@@ -148,6 +161,8 @@ def run_study(args):
 
         with open(out_file, 'w') as fp:
             json.dump(results, fp, indent=4)
+
+    run_exit(args)
 
 
 if __name__ == '__main__':
