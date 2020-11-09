@@ -63,6 +63,8 @@ def run_intro(args):
     text_list = ['Thank you for participating in the study.',
                  'You will be shown two hand/object pairs',
                  'and asked to choose which one looks more natural.',
+                 'Note, some of the difference are very subtle,',
+                 'you may find focusing on the fingertips is helpful.',
                  'Please press the indicated key to choose.',
                  ' ',
                  'The view perspective can be shifted by:',
