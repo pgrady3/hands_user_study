@@ -40,8 +40,10 @@ def get_meshes(hand_verts, hand_faces, obj_verts, obj_faces):
     hand_color = np.asarray([224.0, 172.0, 105.0]) / 255
     obj_color = np.asarray([100.0, 100.0, 100.0]) / 255
 
+    obj_centroid = obj_verts.mean(axis=0)
+
     hand_mesh = o3dg.TriangleMesh()
-    hand_mesh.vertices = o3du.Vector3dVector(hand_verts)
+    hand_mesh.vertices = o3du.Vector3dVector(hand_verts - obj_centroid)
     hand_mesh.triangles = o3du.Vector3iVector(hand_faces)
     hand_mesh.compute_vertex_normals()
     hand_mesh.paint_uniform_color(hand_color)
@@ -52,7 +54,7 @@ def get_meshes(hand_verts, hand_faces, obj_verts, obj_faces):
     # hand_mesh.compute_vertex_normals()
 
     obj_mesh = o3dg.TriangleMesh()
-    obj_mesh.vertices = o3du.Vector3dVector(obj_verts)
+    obj_mesh.vertices = o3du.Vector3dVector(obj_verts - obj_centroid)
     obj_mesh.triangles = o3du.Vector3iVector(obj_faces)
     obj_mesh.compute_vertex_normals()
     obj_mesh.paint_uniform_color(obj_color)

@@ -152,6 +152,9 @@ def run_study(args):
     print('Randomizing order')
 
     for sample in split_samples:
+        # if sample['obj_name'] != 'mug':
+        #     continue
+
         out = dict()
         out['hash'] = sample['hash']
         out['split'] = args.split
