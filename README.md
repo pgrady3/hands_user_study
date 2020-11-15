@@ -30,5 +30,11 @@ python run_study.py
 python run_study.py --split=im
 ```
 
+### Running GrabNet Study
+
+```
+python run_study.py --split=grabnet_im_3
+```
+
 ### Results Submission
 Once you are finished, return the results by emailing `results_*.json` to Patrick Grady
